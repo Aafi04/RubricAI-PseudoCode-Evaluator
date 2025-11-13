@@ -131,68 +131,13 @@ Matcher types: keyword, phrase, structure, regex, semantic (extensible).
 
 Perfect submission (should score highly):
 
-````text
+```text
 FUNCTION find_max(numbers):
   IF numbers IS EMPTY:
     RETURN NULL
 
   max_val = numbers[0]
    # RubricAI PseudoCode Evaluator
-
-  ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
-  ![Flask](https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white)
-  ![Gemini](https://img.shields.io/badge/Google%20Gemini-8E75FF?logo=google&logoColor=white)
-
-  A lightweight toolkit (Flask + Google Generative AI) to evaluate student pseudocode against structured instructor rubrics. This README explains how to run the project locally, run tests, and configure the Google API key required to call the Generative API (Gemini).
-
-  ---
-
-  ## Table of contents
-
-  - [Project status](#project-status)
-  - [Quickstart](#quickstart)
-  - [Google API key (how to create)](#google-api-key-how-to-create)
-  - [Configuration / environment variables](#configuration--environment-variables)
-  - [Running locally](#running-locally)
-  - [Running tests](#running-tests)
-  - [CI / GitHub Actions](#ci--github-actions)
-  - [Security notes](#security-notes)
-  - [Contributing](#contributing)
-  - [Contact](#contact)
-
-  ---
-
-  ## Project status
-
-  Core functionality is stable for basic evaluation and history persistence. The project includes unit tests and a small web UI in `index.html` served by `flask_server.py`.
-
-  ---
-
-  ## Quickstart
-
-  ### Requirements
-
-  - Python 3.8+
-  - A Google Cloud project with Generative AI (Gemini) access (see below)
-
-  ### Install (local)
-
-  PowerShell (Windows):
-
-  ```powershell
-  # create & activate venv
-  python -m venv .venv
-  .venv\Scripts\Activate.ps1
-
-  pip install -r requirements.txt
-````
-
-macOS / Linux:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
 ```
 
 ---
