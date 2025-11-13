@@ -1,8 +1,14 @@
 # RubricAI PseudoCode Evaluator
 
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white)
+![Gemini](https://img.shields.io/badge/Google%20Gemini-8E75FF?logo=google&logoColor=white)
+
 A lightweight toolkit made using Python, Flask and Gemini to automatically score student pseudocode against structured instructor rubrics — focused on interpretability, flexibility, and easy integration.
 
-![alt text](images/image1.png)
+![Image 1](images/image1.png)
+![Image 2](images/image2.png)
+![Image 3](images/image3.png)
 
 ---
 
