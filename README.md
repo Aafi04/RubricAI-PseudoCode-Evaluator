@@ -129,18 +129,63 @@ Matcher types: keyword, phrase, structure, regex, semantic (extensible).
 
 ### Sample pseudocode examples
 
-Perfect submission (should score highly):
+1. The "Perfect" Submission
+   This one should get 10/10. The logic is correct, it handles the main edge case (empty array), and it's very easy to read.
 
-```text
+```
 FUNCTION find_max(numbers):
-  IF numbers IS EMPTY:
-    RETURN NULL
+    IF numbers IS EMPTY:
+        RETURN NULL
 
-  max_val = numbers[0]
-  FOR i FROM 1 TO length(numbers) - 1:
-    IF numbers[i] > max_val:
-      max_val = numbers[i]
-  RETURN max_val
+    max_val = numbers[0]
+
+    FOR i FROM 1 TO length(numbers) - 1:
+        IF numbers[i] > max_val:
+            max_val = numbers[i]
+
+    RETURN max_val
+```
+
+2. Good Logic, Poor Readability
+   This should get a high Logic score (4-5/5) but a low Readability score (1-2/5). The algorithm is correct, but the variable and function names are meaningless.
+
+```
+FUNCTION doit(x):
+    IF length(x) == 0:
+        RETURN 0
+
+    v = x[0]
+    FOR i FROM 1 TO length(x) - 1:
+        IF x[i] > v:
+            v = x[i]
+    RETURN v
+```
+
+3. Good Readability, Bad Logic
+   This is the opposite. It should get a high Readability score (4-5/5) but a low Logic score (1-2/5). The code looks clean, but the algorithm is fundamentally wrong (it skips the last element and starts total at 1).
+
+```
+FUNCTION calculate_sum(array_of_numbers):
+    total = 1  // BUG: Should be 0
+
+    // BUG: Skips the last element
+    FOR i FROM 0 TO length(array_of_numbers) - 2:
+        total = total + array_of_numbers[i]
+
+    RETURN total
+```
+
+4. The "Just Plain Wrong" Submission
+   This should get a very low score (1-3/10) across the board. The variable names are confusing, and the logic for reversing a string is broken (it just builds the string in the original order).
+
+```
+FUNCTION reverse_it(string_one):
+    string_two = ""
+
+    FOR i FROM 0 TO length(string_one) - 1:
+        string_two = string_two + string_one[i]
+
+    RETURN string_two
 ```
 
 ---
