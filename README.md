@@ -131,105 +131,205 @@ Matcher types: keyword, phrase, structure, regex, semantic (extensible).
 
 Perfect submission (should score highly):
 
-```text
+````text
 FUNCTION find_max(numbers):
   IF numbers IS EMPTY:
     RETURN NULL
 
   max_val = numbers[0]
-  FOR i FROM 1 TO length(numbers) - 1:
-    IF numbers[i] > max_val:
-      max_val = numbers[i]
-  RETURN max_val
-```
+   # RubricAI PseudoCode Evaluator
 
-Good logic, poor readability:
+  ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+  ![Flask](https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white)
+  ![Gemini](https://img.shields.io/badge/Google%20Gemini-8E75FF?logo=google&logoColor=white)
 
-```text
-FUNCTION doit(x):
-  IF length(x) == 0:
-    RETURN 0
+  A lightweight toolkit (Flask + Google Generative AI) to evaluate student pseudocode against structured instructor rubrics. This README explains how to run the project locally, run tests, and configure the Google API key required to call the Generative API (Gemini).
 
-  v = x[0]
-  FOR i FROM 1 TO length(x) - 1:
-    IF x[i] > v:
-      v = x[i]
-  RETURN v
-```
+  ---
 
-Good readability, bad logic:
+  ## Table of contents
 
-```text
-FUNCTION calculate_sum(array_of_numbers):
-  total = 1  // BUG: Should be 0
-  FOR i FROM 0 TO length(array_of_numbers) - 2:  // BUG: skips last
-    total = total + array_of_numbers[i]
-  RETURN total
-```
+  - [Project status](#project-status)
+  - [Quickstart](#quickstart)
+  - [Google API key (how to create)](#google-api-key-how-to-create)
+  - [Configuration / environment variables](#configuration--environment-variables)
+  - [Running locally](#running-locally)
+  - [Running tests](#running-tests)
+  - [CI / GitHub Actions](#ci--github-actions)
+  - [Security notes](#security-notes)
+  - [Contributing](#contributing)
+  - [Contact](#contact)
 
-Broken reverse example:
+  ---
 
-```text
-FUNCTION reverse_it(string_one):
-  string_two = ""
-  FOR i FROM 0 TO length(string_one) - 1:
-    string_two = string_two + string_one[i]
-  RETURN string_two
+  ## Project status
+
+  Core functionality is stable for basic evaluation and history persistence. The project includes unit tests and a small web UI in `index.html` served by `flask_server.py`.
+
+  ---
+
+  ## Quickstart
+
+  ### Requirements
+
+  - Python 3.8+
+  - A Google Cloud project with Generative AI (Gemini) access (see below)
+
+  ### Install (local)
+
+  PowerShell (Windows):
+
+  ```powershell
+  # create & activate venv
+  python -m venv .venv
+  .venv\Scripts\Activate.ps1
+
+  pip install -r requirements.txt
+````
+
+macOS / Linux:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ---
 
-## Important rubric fields (compact)
+## Google API key — how to create one (do NOT paste the key into the repo)
 
-- id — unique identifier
-- name — short title for reports
-- description — grader guidance / feedback template
-- max_points — points available
-- required — if true, missing can trigger penalties
-- matcher — detection strategy (keyword/phrase/structure/regex/semantic)
-- partial_credit — rules for partial scoring
+You must create an API key for the Google Generative AI service (Gemini). These are the high-level steps — UI labels may vary slightly as Google updates the console.
 
----
+1. Go to Google Cloud Console: https://console.cloud.google.com/
+2. Select or create a Google Cloud project (top-left project selector).
+3. Enable billing for the project (required for Generative AI usage).
+4. Enable the Generative AI API or "Generative Models API" for the project:
+   - Navigate to `APIs & Services` → `Library` and search for "Generative" or "Generative AI" and enable the appropriate API for your project.
+5. Create credentials (API key):
+   - `APIs & Services` → `Credentials` → `+ CREATE CREDENTIALS` → `API key`.
+   - Copy the created key — treat it like a secret.
+6. Optionally restrict the API key (recommended): limit by HTTP referrer, IP, or restrict to the Generative API.
 
-## Configuration & extending matchers
-
-- Add custom matchers under `rubricai_evaluator/matchers/` implementing:
-  match(submission_text, matcher_config) -> MatchResult
-- Add synonyms in `config/` or include them inline in matcher configs.
-- ML-based matchers: wrap your embeddings/classifier and register as `semantic`.
+Important: do not commit the API key to your repository. Instead, set it as an environment variable locally and as a repository secret in GitHub Actions (see below).
 
 ---
 
-## Diagnostics & logs
+## Configuration / environment variables
 
-- Use `--verbose` for per-item logs in CLI.
-- Set `RUBRICAI_LOG=debug` for debug output.
-- JSON reports include evidence snippets (matched indices + context).
+The main env vars used by the app are:
+
+- `GOOGLE_API_KEY` — your Google API key (required to call the Generative API)
+- `GENAI_MODEL` — optional override of the model id (defaults to a preconfigured Gemini model in the code)
+- `ADMIN_TOKEN` — optional admin token used to protect the `POST /clear_history` endpoint
+
+Set them in PowerShell (temporary for the session):
+
+```powershell
+$env:GOOGLE_API_KEY = "YOUR_API_KEY_HERE"
+$env:GENAI_MODEL = "models/gemini-ultra-1"  # optional
+$env:ADMIN_TOKEN = "a-secret-token"        # optional
+```
+
+Or on macOS / Linux:
+
+```bash
+export GOOGLE_API_KEY="YOUR_API_KEY_HERE"
+export GENAI_MODEL="models/gemini-ultra-1"  # optional
+export ADMIN_TOKEN="a-secret-token"        # optional
+```
+
+Replace `models/gemini-ultra-1` with the model id you want to use (or leave unset to use the default in `flask_server.py`).
+
+---
+
+## Running locally
+
+Start the Flask development server (this project serves `index.html` and provides the API endpoints):
+
+```powershell
+# With venv active and env vars set (see above)
+python flask_server.py
+
+# By default, server listens on http://127.0.0.1:5000
+```
+
+Open `http://127.0.0.1:5000` in your browser to access the UI. Use the textarea to paste pseudocode and click Evaluate. The UI also exposes a History view and a Clear History action (Clear History requires `ADMIN_TOKEN` if set).
+
+API endpoints (examples):
+
+- `POST /evaluate` — JSON { "pseudocode": "..." } → evaluation JSON (from the model)
+- `GET /history` — returns saved evaluations (newest-first)
+- `POST /clear_history` — clears saved history (requires `ADMIN_TOKEN` header if configured)
+
+Example curl (Linux/macOS):
+
+```bash
+curl -X POST http://127.0.0.1:5000/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"pseudocode":"FUNCTION foo():\n  RETURN 1"}'
+```
+
+Example PowerShell:
+
+```powershell
+$body = @{ pseudocode = "FUNCTION foo():\n  RETURN 1" } | ConvertTo-Json
+Invoke-RestMethod -Uri http://127.0.0.1:5000/evaluate -Method Post -Body $body -ContentType 'application/json'
+```
 
 ---
 
 ## Running tests
 
-If a `tests/` directory exists:
+Run tests locally with pytest (ensure you have the virtualenv active):
 
 ```bash
+pip install -r requirements.txt
 pytest -q
-# Or: pip install pytest && pytest -q
 ```
+
+Notes:
+
+- Tests are written to mock external calls where appropriate. If any tests call external APIs, you will need to provide `GOOGLE_API_KEY` or set up mocks.
+
+---
+
+## CI / GitHub Actions
+
+This repository includes a basic GitHub Actions workflow at `.github/workflows/ci.yml` that:
+
+- sets up Python 3.10
+- installs `requirements.txt`
+- ensures `pytest` is installed
+- runs `python -m pytest -q`
+
+If you enable Actions for the repo, add the following repository secrets (Settings → Secrets → Actions):
+
+- `GOOGLE_API_KEY` — your API key (value from Google Cloud)
+- `ADMIN_TOKEN` — (optional) the admin token if you want the workflow or other automation to use it
+
+Do NOT store secrets in the repository files.
+
+If you prefer not to run CI on every push, edit the workflow triggers (`on:`) to `pull_request` or `workflow_dispatch` (manual runs only).
+
+---
+
+## Security notes
+
+- Never commit API keys or other secrets to git. Use environment variables and CI secrets.
+- Consider restricting the API key in Google Cloud to your project's needs (HTTP referrers, IPs, and API restrictions).
+- Rotate keys if you suspect leakage.
 
 ---
 
 ## Contributing
 
-1. Fork → branch → implement → tests → PR.
-2. Add tests for new behavior.
-3. Follow existing code style.
-
-Preferred areas: new matchers, structural parser improvements, tokenization, performance, UI integrations.
+Fork → branch → implement → tests → PR. Add tests for new features and keep changes focused.
 
 ---
 
-## Contact & support
+## Contact
 
-Repo: https://github.com/Aafi04/RubricAI-PseudoCode-Evaluator  
-Open an issue for bugs, features, or integration help. ;)
+Repo: https://github.com/Aafi04/RubricAI-PseudoCode-Evaluator
+
+Open an issue for bugs, features, or integration help.
