@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RubricAI</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        display: grid;
+        place-items: center;
+        min-height: 90vh;
+        background-color: #f4f7f6;
+        color: #333;
+      }
+      main {
+        width: 90%;
+        max-width: 600px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem 2rem;
+      }
+      h1 {
+        color: #111;
+        text-align: center;
+      }
+      textarea {
+        width: 100%;
+        min-height: 150px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 0.5rem;
+        font-family: monospace;
+      }
+      button {
+        width: 100%;
+        background-color: #007bff;
+        color: white;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 1rem;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      #results {
+        margin-top: 1.5rem;
+        border-top: 1px solid #eee;
+        padding-top: 1.5rem;
+      }
+      .result-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+      .result-header {
+        background: #f9f9f9;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #ddd;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+      }
+      .result-body {
+        padding: 1rem;
+      }
+      .score-badge {
+        background: #007bff;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+      .summary-pass {
+        border-left: 4px solid #28a745;
+      }
+      .summary-fail {
+        border-left: 4px solid #dc3545;
+      }
+      .summary-card {
+        background: #fdfdfd;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>RubricAI Evaluation</h1>
+      <form id="evalForm">
+        <textarea
+          id="pseudocode"
+          rows="10"
+          placeholder="Enter your pseudocode here..."
+        ></textarea>
+        <button type="submit">Evaluate</button>
+      </form>
+      <div id="results"></div>
+      <button
+        id="historyBtn"
+        type="button"
+        style="background-color: #6c757d; margin-top: 0.5rem"
+      >
+        Show History
+      </button>
+      <button
+        id="clearHistoryBtn"
+        type="button"
+        style="background-color: #dc3545; margin-top: 0.5rem"
+      >
+        Clear History
+      </button>
+      <div id="historyContainer"></div>
+    </main>
+
+    <script>
+      document
+        .getElementById("evalForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const pseudocode = document.getElementById("pseudocode").value;
+          const resultsDiv = document.getElementById("results");
+          const button = this.querySelector("button");
+
+          resultsDiv.innerHTML = "<p>Loading...</p>";
+          button.disabled = true;
+
+          try {
+            const response = await fetch("/evaluate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ pseudocode: pseudocode }),
+            });
+
+            const rawText = await response.text();
+
+            try {
+              // Try to parse as JSON first
+              const data = JSON.parse(rawText);
+              buildReport(data);
+            } catch (e) {
+              // If JSON parse fails, it's probably an error from the server
+              buildErrorCard(
+                "Server Error",
+                `The server sent a non-JSON response. Status: ${
+                  response.status
+                }<br><br><b>Raw Response:</b><br><pre>${escapeHtml(
+                  rawText
+                )}</pre>`
+              );
+            }
+          } catch (error) {
+            buildErrorCard(
+              "Network Error",
+              `Could not connect to the server. ${escapeHtml(error.message)}`
+            );
+          } finally {
+            button.disabled = false;
+          }
+        });
+
+      function buildReport(data) {
+        const resultsDiv = document.getElementById("results");
+
+        // Simple check for a valid-looking report
+        if (
+          typeof data.total_score === "undefined" ||
+          typeof data.final_summary === "undefined"
+        ) {
+          buildErrorCard(
+            "Invalid AI Response",
+            `The AI returned an unexpected JSON structure.<br><br><b>Raw JSON:</b><br><pre>${escapeHtml(
+              JSON.stringify(data, null, 2)
+            )}</pre>`
+          );
+          return;
+        }
+
+        const summaryClass =
+          data.total_score >= 6 ? "summary-pass" : "summary-fail";
+
+        resultsDiv.innerHTML = `
+                <h3>Evaluation Report</h3>
+                
+                <div class="result-card">
+                    <div class="result-header">
+                        <span>Logic</span>
+                        <span class="score-badge">${escapeHtml(
+                          String(data.logic_score)
+                        )} / 5</span>
+                    </div>
+                    <div class="result-body">
+                        <p>${escapeHtml(String(data.logic_feedback))}</p>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-header">
+                        <span>Readability</span>
+                        <span class="score-badge">${escapeHtml(
+                          String(data.readability_score)
+                        )} / 5</span>
+                    </div>
+                    <div class="result-body">
+                        <p>${escapeHtml(String(data.readability_feedback))}</p>
+                    </div>
+                </div>
+
+                <div class="summary-card ${summaryClass}">
+                    <strong>Final Summary (Total: ${escapeHtml(
+                      String(data.total_score)
+                    )} / 10)</strong>
+                    <p>${escapeHtml(String(data.final_summary))}</p>
+                </div>
+            `;
+      }
+
+      function buildErrorCard(title, message) {
+        const resultsDiv = document.getElementById("results");
+        resultsDiv.innerHTML = `
+                <div class="result-card summary-fail">
+                    <div class="result-header">
+                        <span>${escapeHtml(title)}</span>
+                    </div>
+                    <div class="result-body">
+                        <p>${message}</p>
+                    </div>
+                </div>
+            `;
+      }
+
+      // Small utility to prevent HTML injection when showing raw responses
+      function escapeHtml(unsafe) {
+        return unsafe
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      // --- Add this new code at the end of the script ---
+
+      document
+        .getElementById("historyBtn")
+        .addEventListener("click", loadHistory);
+
+      async function loadHistory() {
+        const container = document.getElementById("historyContainer");
+        const btn = document.getElementById("historyBtn");
+        container.innerHTML = "<p>Loading history...</p>";
+        btn.disabled = true;
+
+        try {
+          const response = await fetch("/history");
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+          const historyData = await response.json();
+
+          if (historyData.length === 0) {
+            container.innerHTML = "<p>No evaluation history found.</p>";
+            return;
+          }
+
+          buildHistoryList(historyData);
+        } catch (error) {
+          container.innerHTML = `<p style="color: red;">Failed to load history: ${escapeHtml(
+            error.message
+          )}</p>`;
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      function buildHistoryList(history) {
+        const container = document.getElementById("historyContainer");
+        let html = "<h2>Submission History</h2>";
+
+        history.forEach((item) => {
+          // Check for valid item structure
+          if (
+            !item.evaluation ||
+            typeof item.evaluation.total_score === "undefined"
+          )
+            return;
+
+          const score = item.evaluation.total_score;
+          const summary = item.evaluation.final_summary || "No summary.";
+          const timestamp = new Date(item.timestamp).toLocaleString();
+          const summaryClass = score >= 6 ? "summary-pass" : "summary-fail";
+
+          html += `
+                <div class="result-card ${summaryClass}" style="margin-bottom: 1rem;">
+                    <div class="result-header">
+                        <span>${escapeHtml(timestamp)}</span>
+                        <span class="score-badge">Total: ${escapeHtml(
+                          String(score)
+                        )} / 10</span>
+                    </div>
+                    <div class="result-body">
+                        <p><strong>Summary:</strong> ${escapeHtml(summary)}</p>
+                        <details>
+                            <summary>View submitted pseudocode</summary>
+                            <pre style="background: #f4f4f4; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">${escapeHtml(
+                              item.pseudocode || ""
+                            )}</pre>
+                        </details>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      // --- Add Clear History handler ---
+
+      document
+        .getElementById("clearHistoryBtn")
+        .addEventListener("click", async () => {
+          if (
+            !confirm(
+              "Are you sure you want to permanently delete all submission history?"
+            )
+          ) {
+            return;
+          }
+
+          const container = document.getElementById("historyContainer");
+          const btn = document.getElementById("clearHistoryBtn");
+          btn.disabled = true;
+
+          try {
+            const response = await fetch("/clear_history", { method: "POST" });
+            if (!response.ok) {
+              throw new Error(`Server error: ${response.status}`);
+            }
+            container.innerHTML = "<p>History has been cleared.</p>";
+          } catch (error) {
+            container.innerHTML = `<p style="color: red;">Failed to clear history: ${escapeHtml(
+              error.message
+            )}</p>`;
+          } finally {
+            btn.disabled = false;
+          }
+        });
+    </script>
+  </body>
+</html>
