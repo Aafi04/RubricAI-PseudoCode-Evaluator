@@ -1,8 +1,11 @@
 # RubricAI PseudoCode Evaluator
 
-[![Python](https://img.shields.io/badge/python-3.8%2B-brightgreen.svg)](#requirements)
+[![Build](https://github.com/Aafi04/RubricAI-PseudoCode-Evaluator/actions/workflows/ci.yml/badge.svg)](https://github.com/Aafi04/RubricAI-PseudoCode-Evaluator/actions) [![PyPI version](https://img.shields.io/pypi/v/rubricai-evaluator.svg)](https://pypi.org/project/rubricai-evaluator) [![Docs](https://readthedocs.org/projects/rubricai-evaluator/badge/?version=latest)](https://rubricai-evaluator.readthedocs.io/) [![Coverage](https://codecov.io/gh/Aafi04/RubricAI-PseudoCode-Evaluator/branch/main/graph/badge.svg)](https://codecov.io/gh/Aafi04/RubricAI-PseudoCode-Evaluator) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license) [![Stars](https://img.shields.io/github/stars/Aafi04/RubricAI-PseudoCode-Evaluator.svg?style=social)](https://github.com/Aafi04/RubricAI-PseudoCode-Evaluator/stargazers) [![Issues](https://img.shields.io/github/issues/Aafi04/RubricAI-PseudoCode-Evaluator.svg)](https://github.com/Aafi04/RubricAI-PseudoCode-Evaluator/issues)
 
-A lightweight toolkit to automatically score student pseudocode against structured instructor rubrics — focused on interpretability, flexibility, and easy integration.
+A lightweight toolkit made using Python, Flask and Gemini to automatically score student pseudocode against structured instructor rubrics — focused on interpretability, flexibility, and easy integration.
+
+![Image1](image.png)
+![Image2](image-1.png)
 
 ---
 
