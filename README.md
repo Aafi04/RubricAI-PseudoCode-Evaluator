@@ -137,7 +137,10 @@ FUNCTION find_max(numbers):
     RETURN NULL
 
   max_val = numbers[0]
-   # RubricAI PseudoCode Evaluator
+  FOR i FROM 1 TO length(numbers) - 1:
+    IF numbers[i] > max_val:
+      max_val = numbers[i]
+  RETURN max_val
 ```
 
 ---
