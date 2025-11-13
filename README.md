@@ -2,8 +2,7 @@
 
 A lightweight toolkit made using Python, Flask and Gemini to automatically score student pseudocode against structured instructor rubrics — focused on interpretability, flexibility, and easy integration.
 
-![Image1](image.png)
-![Image2](image-1.png)
+![alt text](images/image1.png)
 
 ---
 
